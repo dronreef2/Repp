@@ -1,0 +1,47 @@
+**PROJETO: EVOLUÇÃO DO AGENTE ASSISTIVO DE APRENDIZAGEM (Next Gen SaaS)**
+
+**FUNÇÃO DELEGADA:** Você é o Arquiteto de Software Sênior. Sua tarefa é evoluir o MVP atual do Agente Assistivo para uma versão 2.0, adicionando segurança, personalização e um novo agente de automação.
+
+**ESTADO ATUAL:** As Fases 1-4 (API Flask, ReplitDB, Integração Gemini via /api/ask e /api/get_history) estão 100% funcionais.
+
+---
+
+### **FASE A: IMPLEMENTAÇÃO DE RECURSOS DE PRÓXIMA GERAÇÃO**
+
+**MÓDULO 4: Automação (Agente de Relatórios de Progresso)**
+
+1.  **Novo Endpoint:** Crie um novo endpoint `GET /api/report` que aceite **`user_id`** como parâmetro de consulta.
+2.  **Nova Função:** Crie a função `gerar_relatorio_analitico(historico_list: list) -> dict`.
+3.  **Instrução de Sistema/Análise (Gemini):** Dentro desta função, envie o histórico de tópicos do usuário para o Gemini. O System Prompt deve instruir o modelo a **analisar** a diversidade de temas, categorizar as áreas de foco e **gerar** um feedback personalizado e motivacional.
+4.  **Schema de Saída:** O endpoint deve retornar um JSON analítico estrito: `{"analysis_summary": "string", "focus_areas": ["string", "string"], "recommendation": "string"}`.
+
+**MÓDULO 5: Segurança e Escalabilidade (Rate Limiting)**
+
+1.  **Dependência:** Instale uma biblioteca Flask adequada para rate limiting (ex: `Flask-Limiter` ou implemente a lógica de contador via ReplitDB, priorize a solução mais simples e nativa).
+2.  **Aplicação:** Aplique o limite de **5 requisições por minuto** no endpoint **`POST /api/ask`**.
+3.  **Rastreamento:** A chave de rastreamento do limite deve ser o **`user_id`** fornecido no corpo do JSON.
+4.  **Erro:** Retorne um status HTTP **429 Too Many Requests** quando o limite for excedido.
+
+**MÓDULO 6: Personalização Avançada (Camada de Contexto Dinâmica)**
+
+1.  **Modificar /api/ask:** Adicione um campo **opcional** `level` (default para 'básico') ao JSON de entrada.
+2.  **Refatorar `integrar_gemini`:** Modifique a função para aceitar e utilizar o parâmetro `level` na chamada do Gemini.
+3.  **Lógica do System Prompt Dinâmico:** Use o valor de `level` para injetar instruções específicas no System Prompt do Gemini.
+    * *Exemplo:* Se `level` for 'universitário', o prompt de sistema deve refletir um tom acadêmico e aprofundado.
+4.  **Validação:** Garanta que todas as funcionalidades existentes (salvamento no DB e JSON Schema de saída) permaneçam inalteradas.
+
+---
+
+### **FASE B: FINALIZAÇÃO E PROTOCOLO DE COMMIT**
+
+**Requisito:** Prepare o projeto para o commit final no repositório GitHub (`https://github.com/dronreef2/Repp.git`).
+
+1.  **Revisão Final:** Revise todos os arquivos (`main.py`, `pyproject.toml`, `.env`, etc.) e garanta que todas as dependências estejam corretamente instaladas e as variáveis de ambiente carregadas.
+2.  **Preparação de Commit:** Prepare os comandos necessários para o usuário executar no Shell do Replit.
+    * **Mensagem de Commit:** Use a mensagem: `"feat: Implementação de features Next Gen (Relatórios, Rate Limiting, Personalização de Nível)." `
+3.  **Instrução de Saída:** Retorne os seguintes comandos prontos para serem colados e executados pelo usuário no Shell:
+
+```bash
+git add .
+git commit -m "feat: Implementação de features Next Gen (Relatórios, Rate Limiting, Personalização de Nível)."
+git push
