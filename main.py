@@ -10,7 +10,11 @@ load_dotenv()
 
 app = Flask(__name__)
 
-genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+api_key = os.environ.get('GEMINI_API_KEY')
+if not api_key:
+    app.logger.warning("GEMINI_API_KEY não está configurada. A integração com IA não funcionará.")
+else:
+    genai.configure(api_key=api_key)
 
 @app.route('/')
 def home():
@@ -21,7 +25,7 @@ def home():
 
 @app.route('/api/ask', methods=['POST'])
 def ask():
-    if request.content_type != 'application/json':
+    if not request.is_json:
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     try:
@@ -78,7 +82,7 @@ def get_history():
 def integrar_gemini(topic: str) -> dict:
     try:
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
+            model_name='gemini-2.5-flash',
             generation_config={
                 "response_mime_type": "application/json",
                 "temperature": 0.7,
@@ -98,7 +102,6 @@ Sua resposta deve ser EXCLUSIVAMENTE no formato JSON com a seguinte estrutura:
 Retorne apenas o JSON, sem texto adicional."""
         
         response = model.generate_content(prompt)
-        
         result = json.loads(response.text)
         
         if 'summary' not in result or 'next_steps' not in result:
@@ -107,6 +110,7 @@ Retorne apenas o JSON, sem texto adicional."""
         return result
         
     except Exception as e:
+        app.logger.error(f"Erro na integração Gemini: {type(e).__name__}: {str(e)}")
         return {
             "summary": f"Desculpe, ocorreu um erro ao processar o tópico '{topic}'. Por favor, tente novamente.",
             "next_steps": [
