@@ -1,0 +1,57 @@
+**PROJETO: AGENTE ASSISTIVO DE APRENDIZAGEM (SaaS PROTÓTIPO)**
+
+**FUNÇÃO DELEGADA:** Você é um Desenvolvedor Python Full-Stack Sênior. Sua tarefa é construir um microsserviço Flask completo que atua como um agente de IA para fins educacionais, utilizando o ReplitDB para persistência e a API do Gemini para a lógica de resposta.
+
+**ARQUITETURA FINAL REQUERIDA:**
+* **Linguagem:** Python
+* **Framework Web:** Flask
+* **Banco de Dados:** ReplitDB
+* **Segurança:** Chave de API de IA em Variável de Ambiente.
+
+---
+
+### **PLANO DE EXECUÇÃO (Módulos Sequenciais)**
+
+**MÓDULO 1: Configuração e Dependências**
+
+1.  **Inicialize** um novo projeto Python com Flask.
+2.  **Instale** todas as dependências necessárias: `Flask`, `requests` (ou a biblioteca nativa do Gemini, se preferir), `replit`.
+3.  **Segurança:** Crie uma variável de ambiente no arquivo `.env` com o nome **`GEMINI_API_KEY`** para armazenar a chave de acesso à API.
+4.  **Configuração de Inicialização:** Adicione o código para carregar e acessar essa chave de ambiente com segurança.
+
+**MÓDULO 2: Arquitetura da API e Persistência (Fases 1 & 2)**
+
+1.  **Endpoint Principal (GET /):** Crie um endpoint raiz que retorne o nome e a versão do projeto em JSON.
+2.  **Endpoint de Consulta (POST /api/ask):**
+    * Aceite requisições `POST` com JSON contendo **`user_id`** e **`topic`**.
+    * Implemente **tratamento de erros robusto** para JSON malformado, campos ausentes (erro 400), e tipo de conteúdo incorreto.
+    * **Integração DB:** Imediatamente após a validação, **salve** a consulta no ReplitDB. Use um formato de chave única para indexação por prefixo de usuário: `f"query:{user_id}:{int(time.time())}"`
+
+3.  **Endpoint de Histórico (GET /api/get_history):**
+    * Aceite um **`user_id`** como parâmetro de consulta (`query string param`).
+    * Implemente a validação para erro 400 se o `user_id` estiver ausente.
+    * **Lógica de DB:** Use `db.prefix(f"query:{user_id}")` para recuperar todas as consultas históricas.
+    * **Ordenação:** Formate a saída em uma lista de tuplas (timestamp, topic) **ordenadas cronologicamente de forma reversa** (mais recente primeiro).
+
+**MÓDULO 3: INTEGRAÇÃO DE IA GENERATIVA (Lógica Final)**
+
+1.  **Refatoração:** Renomeie qualquer função de lógica simulada (mockup) que possa existir para `gerar_resposta_simulada` (e não a utilize).
+2.  **Nova Função Central:** Crie uma nova função chamada **`integrar_gemini(topic: str) -> dict`**.
+3.  **Chamada de API:** Dentro de `integrar_gemini`, use a API do Gemini.
+4.  **Otimização de Prompt e Schema:**
+    * **System Prompt:** Defina o papel da IA: "Você é um Agente Assistivo de Aprendizagem. Sua tarefa é fornecer uma explicação concisa e fácil de entender (cerca de 100 palavras) sobre o tópico fornecido. Sua resposta deve ser **exclusivamente** no formato JSON."
+    * **Estrutura de Saída (JSON Schema Forçado):** Forçar o modelo a retornar um JSON que siga a estrutura **exata** do protótipo: `{"summary": "string", "next_steps": ["string", "string", "string"]}`.
+5.  **Integração Final:** Modifique a rota **`POST /api/ask`** para **chamar a função `integrar_gemini(topic)`** e retornar a resposta formatada da IA como resposta da API.
+
+---
+
+### **CHECKLIST DE VALIDAÇÃO (Auto-teste do Agente)**
+
+Confirme o funcionamento de **todas** as funcionalidades abaixo antes de finalizar o projeto:
+
+* [ ] O servidor Flask está rodando.
+* [ ] A chave `GEMINI_API_KEY` está sendo lida corretamente.
+* [ ] `POST /api/ask` salva o dado no ReplitDB e retorna a resposta real do Gemini.
+* [ ] `GET /api/get_history?user_id=X` retorna a lista de consultas ordenada corretamente.
+* [ ] As respostas da IA têm a estrutura JSON **exigida** (`summary` e `next_steps`).
+* [ ] O tratamento de erros 400 da Fase 1 ainda está intacto.
