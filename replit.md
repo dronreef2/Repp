@@ -1,149 +1,95 @@
-# Agente Assistivo de Aprendizagem (SaaS Protótipo)
+# Overview
 
-## Overview
-Microsserviço Flask que atua como um agente de IA para fins educacionais, utilizando o ReplitDB para persistência e a API do Google Gemini para a lógica de resposta inteligente.
+This is an AI-powered Educational Assistant SaaS application built as a microservice using Flask and Python. The system provides intelligent learning assistance through natural language interactions, storing user query history and generating personalized educational responses using Google's Gemini AI. The application features automated progress reporting, rate limiting for security, and dynamic content personalization based on user expertise levels.
 
-## Arquitetura
-- **Linguagem:** Python 3.11
-- **Framework Web:** Flask
-- **Banco de Dados:** ReplitDB
-- **IA:** Google Gemini 1.5 Flash
-- **Segurança:** Chave de API em Variável de Ambiente (GEMINI_API_KEY)
+# User Preferences
 
-## Estrutura do Projeto
-```
-.
-├── main.py                 # Aplicação Flask principal
-├── .env                    # Variáveis de ambiente (não commitado)
-├── .env.example            # Exemplo de variáveis de ambiente
-├── pyproject.toml          # Dependências Python
-└── replit.md              # Esta documentação
-```
+Preferred communication style: Simple, everyday language.
 
-## Endpoints da API
+# System Architecture
 
-### GET /
-Retorna o nome e versão do projeto.
+## Backend Architecture
 
-**Resposta:**
-```json
-{
-  "name": "Agente Assistivo de Aprendizagem",
-  "version": "1.0.0"
-}
-```
+**Framework**: Flask-based REST API microservice
+- **Language**: Python
+- **Web Framework**: Flask for HTTP request handling and routing
+- **Rationale**: Flask provides lightweight, flexible foundation for rapid prototyping while maintaining production readiness
 
-### POST /api/ask
-Aceita uma consulta do usuário e retorna uma resposta educacional gerada pela IA.
+## Data Storage
 
-**Request Body:**
-```json
-{
-  "user_id": "string",
-  "topic": "string"
-}
-```
+**Primary Database**: ReplitDB (key-value store)
+- **Schema Design**: Prefix-based indexing using pattern `query:{user_id}:{timestamp}`
+- **Rationale**: ReplitDB offers zero-configuration persistence suitable for MVP deployment on Replit infrastructure
+- **Query Pattern**: Prefix matching enables efficient user-specific history retrieval
+- **Data Structure**: Stores user queries with temporal ordering for chronological analysis
 
-**Resposta:**
-```json
-{
-  "summary": "Explicação concisa do tópico",
-  "next_steps": ["passo 1", "passo 2", "passo 3"]
-}
-```
+## API Design
 
-**Erros:**
-- 400: JSON malformado, campos ausentes ou Content-Type incorreto
+**RESTful Endpoints**:
+1. `GET /` - Health check and version info
+2. `POST /api/ask` - Primary query endpoint with AI response generation
+3. `GET /api/get_history` - User query history retrieval
+4. `GET /api/report` - Automated progress analytics
 
-### GET /api/get_history?user_id=X
-Retorna o histórico de consultas de um usuário ordenado cronologicamente (mais recente primeiro).
+**Request/Response Pattern**:
+- Strict JSON schema enforcement for predictable data contracts
+- Comprehensive error handling (400 for validation, 429 for rate limits)
+- User identification via `user_id` parameter for session tracking
 
-**Resposta:**
-```json
-{
-  "history": [
-    [timestamp, "topic"],
-    [timestamp, "topic"]
-  ]
-}
-```
+## AI Integration
 
-**Erros:**
-- 400: user_id ausente
+**Provider**: Google Gemini API
+- **Integration Pattern**: Direct API calls via `integrar_gemini()` function
+- **Prompt Engineering**: System prompts define assistant role and output constraints
+- **Response Format**: Enforced JSON schema `{"summary": "string", "next_steps": ["string", "string", "string"]}`
+- **Rationale**: Gemini provides cost-effective, high-quality generative responses with structured output capabilities
 
-## Configuração
+**Personalization Layer**:
+- Dynamic system prompts based on user `level` parameter (básico, universitário, etc.)
+- Context-aware response generation adapting tone and depth to user expertise
 
-### 1. Obter Chave da API do Gemini ⚠️ OBRIGATÓRIO
-1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Crie uma nova chave de API
-3. Adicione a chave nas variáveis de ambiente do Replit como `GEMINI_API_KEY`
+## Security & Performance
 
-**IMPORTANTE**: O servidor irá iniciar sem a chave, mas a integração com IA não funcionará. Verifique os logs na inicialização para confirmar se a chave foi carregada corretamente.
+**API Key Management**:
+- Environment variable `GEMINI_API_KEY` stored in `.env` file
+- Rationale: Prevents credential exposure in version control
 
-### 2. Instalar Dependências
-As dependências já estão instaladas via uv:
-- flask
-- google-generativeai
-- replit
-- python-dotenv
+**Rate Limiting**:
+- 5 requests per minute per `user_id` on `POST /api/ask`
+- Implementation: Flask-Limiter or custom ReplitDB counter logic
+- Rationale: Prevents abuse and manages AI API costs
 
-### 3. Executar o Servidor
-```bash
-python main.py
-```
+**Error Handling**:
+- Input validation at endpoint level
+- Graceful degradation with appropriate HTTP status codes
+- Malformed JSON and missing field detection
 
-O servidor estará disponível em `http://0.0.0.0:5000`
+## Analytics & Automation
 
-## Persistência de Dados
-O ReplitDB é usado para armazenar consultas com o seguinte formato de chave:
-```
-query:{user_id}:{timestamp}
-```
+**Progress Reporting Agent**:
+- Function: `gerar_relatorio_analitico()` analyzes user query patterns
+- Uses Gemini to generate insights on learning diversity and focus areas
+- Output schema: `{"analysis_summary": "string", "focus_areas": ["array"], "recommendation": "string"}`
+- Rationale: Automated coaching feedback without manual intervention
 
-Cada entrada contém:
-```json
-{
-  "user_id": "string",
-  "topic": "string",
-  "timestamp": integer
-}
-```
+# External Dependencies
 
-## Funcionalidades Implementadas
-- ✅ Servidor Flask com estrutura modular
-- ✅ Endpoint GET / retornando nome e versão
-- ✅ Endpoint POST /api/ask com validação robusta (suporta charset variants)
-- ✅ Integração com Google Gemini AI (modelo gemini-2.5-flash)
-- ✅ Prompt otimizado forçando JSON schema específico
-- ✅ Persistência no ReplitDB com indexação user_id:timestamp
-- ✅ Endpoint GET /api/get_history com ordenação reversa (mais recente primeiro)
-- ✅ Tratamento de erros 400 para JSON malformado e campos ausentes
-- ✅ Gerenciamento seguro de GEMINI_API_KEY via variáveis de ambiente
-- ✅ Verificação de startup da chave API com logging
-- ✅ Suíte de testes completa (test_endpoints.sh)
+## Third-Party APIs
+- **Google Gemini API**: Generative AI for educational content and analysis
+  - Authentication: API key-based
+  - Rate limits: Managed at application layer
 
-## Próximas Fases (Futuro)
-- Interface web frontend para interação
-- Sistema de categorização automática de tópicos
-- Rate limiting por usuário
-- Dashboard de analytics
-- Sistema de feedback para melhorar respostas
+## Python Libraries
+- **Flask**: Web framework for REST API
+- **requests**: HTTP client for Gemini API integration (or native Gemini SDK)
+- **replit**: ReplitDB client for data persistence
+- **Flask-Limiter** (or equivalent): Rate limiting middleware
 
-## Testes e Validação
+## Infrastructure
+- **Replit Platform**: Hosting environment
+- **ReplitDB**: Managed key-value database service
+- **Environment Variables**: `.env` file for configuration management
 
-Execute a suíte de testes completa:
-```bash
-bash test_endpoints.sh
-```
-
-### Checklist de Validação ✓
-- [x] O servidor Flask está rodando
-- [x] A chave `GEMINI_API_KEY` está sendo lida corretamente
-- [x] `POST /api/ask` salva no ReplitDB e retorna resposta real do Gemini
-- [x] `GET /api/get_history?user_id=X` retorna lista ordenada corretamente
-- [x] Respostas da IA têm estrutura JSON exigida (`summary` e `next_steps`)
-- [x] Tratamento de erros 400 funciona para todos os casos
-- [x] Content-Type aceita variants com charset (ex: `application/json; charset=UTF-8`)
-
-## Data da Última Atualização
-16 de novembro de 2025
+## Version Control
+- **GitHub Repository**: `https://github.com/dronreef2/Repp.git`
+- Deployment workflow: Direct git push from Replit environment
