@@ -73,10 +73,12 @@ Retorna o histórico de consultas de um usuário ordenado cronologicamente (mais
 
 ## Configuração
 
-### 1. Obter Chave da API do Gemini
+### 1. Obter Chave da API do Gemini ⚠️ OBRIGATÓRIO
 1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Crie uma nova chave de API
 3. Adicione a chave nas variáveis de ambiente do Replit como `GEMINI_API_KEY`
+
+**IMPORTANTE**: O servidor irá iniciar sem a chave, mas a integração com IA não funcionará. Verifique os logs na inicialização para confirmar se a chave foi carregada corretamente.
 
 ### 2. Instalar Dependências
 As dependências já estão instaladas via uv:
@@ -110,13 +112,15 @@ Cada entrada contém:
 ## Funcionalidades Implementadas
 - ✅ Servidor Flask com estrutura modular
 - ✅ Endpoint GET / retornando nome e versão
-- ✅ Endpoint POST /api/ask com validação robusta
-- ✅ Integração com Google Gemini AI
+- ✅ Endpoint POST /api/ask com validação robusta (suporta charset variants)
+- ✅ Integração com Google Gemini AI (modelo gemini-2.5-flash)
 - ✅ Prompt otimizado forçando JSON schema específico
-- ✅ Persistência no ReplitDB
-- ✅ Endpoint GET /api/get_history com ordenação reversa
+- ✅ Persistência no ReplitDB com indexação user_id:timestamp
+- ✅ Endpoint GET /api/get_history com ordenação reversa (mais recente primeiro)
 - ✅ Tratamento de erros 400 para JSON malformado e campos ausentes
 - ✅ Gerenciamento seguro de GEMINI_API_KEY via variáveis de ambiente
+- ✅ Verificação de startup da chave API com logging
+- ✅ Suíte de testes completa (test_endpoints.sh)
 
 ## Próximas Fases (Futuro)
 - Interface web frontend para interação
@@ -124,6 +128,22 @@ Cada entrada contém:
 - Rate limiting por usuário
 - Dashboard de analytics
 - Sistema de feedback para melhorar respostas
+
+## Testes e Validação
+
+Execute a suíte de testes completa:
+```bash
+bash test_endpoints.sh
+```
+
+### Checklist de Validação ✓
+- [x] O servidor Flask está rodando
+- [x] A chave `GEMINI_API_KEY` está sendo lida corretamente
+- [x] `POST /api/ask` salva no ReplitDB e retorna resposta real do Gemini
+- [x] `GET /api/get_history?user_id=X` retorna lista ordenada corretamente
+- [x] Respostas da IA têm estrutura JSON exigida (`summary` e `next_steps`)
+- [x] Tratamento de erros 400 funciona para todos os casos
+- [x] Content-Type aceita variants com charset (ex: `application/json; charset=UTF-8`)
 
 ## Data da Última Atualização
 16 de novembro de 2025
